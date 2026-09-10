@@ -1,0 +1,10 @@
+/tests
+/node_modules
+/.git
+/.github
+/.env
+/.env.*
+/.editorconfig
+/phpunit.xml
+/README.md
+/storage/*.key
