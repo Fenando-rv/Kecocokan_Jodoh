@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Vercel Serverless Function Entrypoint for Laravel
+ * Vercel Serverless Function Entrypoint for Laravel 12
  */
 
 use Illuminate\Foundation\Application;
@@ -9,34 +9,46 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// 1. Definisikan direktori writable di /tmp Vercel
+// 1. Setup writable directories in /tmp
 $tmpStorage = '/tmp/storage';
 $directories = [
     $tmpStorage . '/framework/views',
     $tmpStorage . '/framework/sessions',
     $tmpStorage . '/framework/cache/data',
     $tmpStorage . '/framework/testing',
+    $tmpStorage . '/app/public',
     $tmpStorage . '/logs',
     '/tmp/bootstrap/cache',
 ];
 
-// 2. Buat folder jika belum ada di lingkungan read-only Vercel
 foreach ($directories as $dir) {
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
     }
 }
 
-// 3. Set Environment Variable dasar untuk path cache Vercel
-$envVars = [
-    'VIEW_COMPILED_PATH' => "{$tmpStorage}/framework/views",
+// 2. Ensure SQLite database file exists in /tmp
+$sqlitePath = '/tmp/database.sqlite';
+if (!file_exists($sqlitePath)) {
+    @touch($sqlitePath);
+}
+
+// 3. Define serverless environment defaults
+$defaults = [
+    'VIEW_COMPILED_PATH' => $tmpStorage . '/framework/views',
     'APP_SERVICES_CACHE' => '/tmp/bootstrap/cache/services.php',
     'APP_PACKAGES_CACHE' => '/tmp/bootstrap/cache/packages.php',
     'APP_CONFIG_CACHE' => '/tmp/bootstrap/cache/config.php',
     'APP_ROUTES_CACHE' => '/tmp/bootstrap/cache/routes.php',
+    'SESSION_DRIVER' => 'file',
+    'CACHE_STORE' => 'file',
+    'QUEUE_CONNECTION' => 'sync',
+    'DB_CONNECTION' => 'sqlite',
+    'DB_DATABASE' => $sqlitePath,
+    'LOG_CHANNEL' => 'stderr',
 ];
 
-foreach ($envVars as $key => $value) {
+foreach ($defaults as $key => $value) {
     putenv("{$key}={$value}");
     $_ENV[$key] = $value;
     $_SERVER[$key] = $value;
@@ -45,23 +57,15 @@ foreach ($envVars as $key => $value) {
 // 4. Load Composer Autoloader
 require __DIR__ . '/../vendor/autoload.php';
 
-// 5. Bootstrap Laravel Application
+// 5. Bootstrap Application
 /** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-// 6. Bind storage path ke /tmp/storage
+// 6. Set storage path to /tmp/storage
 $app->useStoragePath($tmpStorage);
 
-// 7. Force safe drivers langsung di config Laravel
-config([
-    'session.driver' => 'file',
-    'cache.default' => 'array',
-    'logging.default' => 'single',
-    'queue.default' => 'sync',
-    'app.debug' => true,
-]);
-
-// 8. Handle Request
+// 7. Handle Request
 $app->handleRequest(Request::capture());
+
 
 
