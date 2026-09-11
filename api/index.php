@@ -27,17 +27,13 @@ foreach ($directories as $dir) {
     }
 }
 
-// 3. Set Environment Variable agar Laravel TIDAK butuh Database & menggunakan /tmp
+// 3. Set Environment Variable dasar untuk path cache Vercel
 $envVars = [
     'VIEW_COMPILED_PATH' => "{$tmpStorage}/framework/views",
     'APP_SERVICES_CACHE' => '/tmp/bootstrap/cache/services.php',
     'APP_PACKAGES_CACHE' => '/tmp/bootstrap/cache/packages.php',
     'APP_CONFIG_CACHE' => '/tmp/bootstrap/cache/config.php',
     'APP_ROUTES_CACHE' => '/tmp/bootstrap/cache/routes.php',
-    'SESSION_DRIVER' => 'file',
-    'CACHE_STORE' => 'file',
-    'LOG_CHANNEL' => 'single',
-    'APP_DEBUG' => 'true',
 ];
 
 foreach ($envVars as $key => $value) {
@@ -56,6 +52,16 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 // 6. Bind storage path ke /tmp/storage
 $app->useStoragePath($tmpStorage);
 
-// 7. Handle Request
+// 7. Force safe drivers langsung di config Laravel
+config([
+    'session.driver' => 'file',
+    'cache.default' => 'array',
+    'logging.default' => 'single',
+    'queue.default' => 'sync',
+    'app.debug' => true,
+]);
+
+// 8. Handle Request
 $app->handleRequest(Request::capture());
+
 
