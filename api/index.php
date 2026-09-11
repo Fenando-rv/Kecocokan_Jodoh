@@ -35,8 +35,8 @@ $envVars = [
     'APP_CONFIG_CACHE' => '/tmp/bootstrap/cache/config.php',
     'APP_ROUTES_CACHE' => '/tmp/bootstrap/cache/routes.php',
     'SESSION_DRIVER' => 'file',
-    'CACHE_STORE' => 'array',
-    'LOG_CHANNEL' => 'stderr',
+    'CACHE_STORE' => 'file',
+    'LOG_CHANNEL' => 'single',
     'APP_DEBUG' => 'true',
 ];
 
