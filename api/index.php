@@ -33,7 +33,14 @@ if (!file_exists($sqlitePath)) {
     @touch($sqlitePath);
 }
 
-// 3. Define serverless environment defaults
+// 3. Fix Vercel Serverless Proxy variables so Laravel routes match properly
+if (isset($_SERVER['HTTP_X_FORWARDED_URI'])) {
+    $_SERVER['REQUEST_URI'] = $_SERVER['HTTP_X_FORWARDED_URI'];
+}
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+$_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/../public/index.php';
+
+// 4. Define serverless environment defaults
 $appKey = getenv('APP_KEY') ?: ($_ENV['APP_KEY'] ?? 'base64:6VJ95kM7svpGcVNDiV/yRKosu+dumLT9ZZId+zVO/Kw=');
 
 $defaults = [
@@ -59,30 +66,19 @@ foreach ($defaults as $key => $value) {
     $_SERVER[$key] = $value;
 }
 
-// 4. Load Composer Autoloader
+// 5. Load Composer Autoloader
 require __DIR__ . '/../vendor/autoload.php';
 
-// 5. Bootstrap Application
+// 6. Bootstrap Application
 /** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-// 6. Set storage path to /tmp/storage
+// 7. Set storage path to /tmp/storage
 $app->useStoragePath($tmpStorage);
-
-// 7. Register booting callback to override config repository
-$app->booting(function () {
-    config([
-        'session.driver' => 'file',
-        'cache.default' => 'array',
-        'logging.default' => 'stderr',
-        'queue.default' => 'sync',
-        'database.default' => 'sqlite',
-        'mail.default' => 'log',
-    ]);
-});
 
 // 8. Handle Request
 $app->handleRequest(Request::capture());
+
 
 
 
