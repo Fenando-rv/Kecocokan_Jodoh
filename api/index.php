@@ -4,7 +4,12 @@
  * Vercel Serverless Function Entrypoint for Laravel
  */
 
-// 1. Definisikan struktur direktori writable di /tmp Vercel
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
+
+define('LARAVEL_START', microtime(true));
+
+// 1. Definisikan direktori writable di /tmp Vercel
 $tmpStorage = '/tmp/storage';
 $directories = [
     $tmpStorage . '/framework/views',
@@ -22,24 +27,35 @@ foreach ($directories as $dir) {
     }
 }
 
-// 3. Set environment variable secara dinamis agar Laravel menggunakan folder writable /tmp
-putenv("VIEW_COMPILED_PATH={$tmpStorage}/framework/views");
-putenv("APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php");
-putenv("APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php");
-putenv("APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php");
-putenv("APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes.php");
+// 3. Set Environment Variable agar Laravel TIDAK butuh Database & menggunakan /tmp
+$envVars = [
+    'VIEW_COMPILED_PATH' => "{$tmpStorage}/framework/views",
+    'APP_SERVICES_CACHE' => '/tmp/bootstrap/cache/services.php',
+    'APP_PACKAGES_CACHE' => '/tmp/bootstrap/cache/packages.php',
+    'APP_CONFIG_CACHE' => '/tmp/bootstrap/cache/config.php',
+    'APP_ROUTES_CACHE' => '/tmp/bootstrap/cache/routes.php',
+    'SESSION_DRIVER' => 'cookie',
+    'CACHE_STORE' => 'array',
+    'LOG_CHANNEL' => 'stderr',
+    'APP_DEBUG' => 'true',
+];
 
-$_ENV['VIEW_COMPILED_PATH'] = "{$tmpStorage}/framework/views";
-$_ENV['APP_SERVICES_CACHE'] = '/tmp/bootstrap/cache/services.php';
-$_ENV['APP_PACKAGES_CACHE'] = '/tmp/bootstrap/cache/packages.php';
-$_ENV['APP_CONFIG_CACHE'] = '/tmp/bootstrap/cache/config.php';
-$_ENV['APP_ROUTES_CACHE'] = '/tmp/bootstrap/cache/routes.php';
+foreach ($envVars as $key => $value) {
+    putenv("{$key}={$value}");
+    $_ENV[$key] = $value;
+    $_SERVER[$key] = $value;
+}
 
-$_SERVER['VIEW_COMPILED_PATH'] = "{$tmpStorage}/framework/views";
-$_SERVER['APP_SERVICES_CACHE'] = '/tmp/bootstrap/cache/services.php';
-$_SERVER['APP_PACKAGES_CACHE'] = '/tmp/bootstrap/cache/packages.php';
-$_SERVER['APP_CONFIG_CACHE'] = '/tmp/bootstrap/cache/config.php';
-$_SERVER['APP_ROUTES_CACHE'] = '/tmp/bootstrap/cache/routes.php';
+// 4. Load Composer Autoloader
+require __DIR__ . '/../vendor/autoload.php';
 
-// 4. Forward request ke entrypoint Laravel public/index.php
-require __DIR__ . '/../public/index.php';
+// 5. Bootstrap Laravel Application
+/** @var Application $app */
+$app = require_once __DIR__ . '/../bootstrap/app.php';
+
+// 6. Bind storage path ke /tmp/storage
+$app->useStoragePath($tmpStorage);
+
+// 7. Handle Request
+$app->handleRequest(Request::capture());
+
