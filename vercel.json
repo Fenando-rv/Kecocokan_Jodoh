@@ -5,13 +5,18 @@
             "runtime": "vercel-php@0.7.3"
         }
     },
+    "build": {
+        "env": {
+            "COMPOSER_FLAGS": "--no-dev --no-interaction --prefer-dist"
+        }
+    },
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "false",
         "CACHE_STORE": "array",
         "SESSION_DRIVER": "cookie",
         "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
-        "COMPOSER_FLAGS": "--no-dev --no-scripts"
+        "COMPOSER_FLAGS": "--no-dev --no-interaction --prefer-dist"
     },
     "routes": [
         {
