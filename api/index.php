@@ -34,14 +34,19 @@ if (!file_exists($sqlitePath)) {
 }
 
 // 3. Define serverless environment defaults
+$appKey = getenv('APP_KEY') ?: ($_ENV['APP_KEY'] ?? 'base64:6VJ95kM7svpGcVNDiV/yRKosu+dumLT9ZZId+zVO/Kw=');
+
 $defaults = [
+    'APP_KEY' => $appKey,
+    'APP_ENV' => 'production',
+    'APP_DEBUG' => 'true',
     'VIEW_COMPILED_PATH' => $tmpStorage . '/framework/views',
     'APP_SERVICES_CACHE' => '/tmp/bootstrap/cache/services.php',
     'APP_PACKAGES_CACHE' => '/tmp/bootstrap/cache/packages.php',
     'APP_CONFIG_CACHE' => '/tmp/bootstrap/cache/config.php',
     'APP_ROUTES_CACHE' => '/tmp/bootstrap/cache/routes.php',
-    'SESSION_DRIVER' => 'file',
-    'CACHE_STORE' => 'file',
+    'SESSION_DRIVER' => 'array',
+    'CACHE_STORE' => 'array',
     'QUEUE_CONNECTION' => 'sync',
     'DB_CONNECTION' => 'sqlite',
     'DB_DATABASE' => $sqlitePath,
