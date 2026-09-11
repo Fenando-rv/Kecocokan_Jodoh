@@ -69,7 +69,20 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 // 6. Set storage path to /tmp/storage
 $app->useStoragePath($tmpStorage);
 
-// 7. Handle Request
+// 7. Register booting callback to safely override config repository right after LoadConfiguration runs
+$app->booting(function () {
+    config([
+        'session.driver' => 'file',
+        'cache.default' => 'array',
+        'logging.default' => 'single',
+        'queue.default' => 'sync',
+        'database.default' => 'sqlite',
+        'mail.default' => 'log',
+        'app.debug' => true,
+    ]);
+});
+
+// 8. Handle Request
 $app->handleRequest(Request::capture());
 
 
