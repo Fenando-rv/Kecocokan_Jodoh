@@ -69,7 +69,17 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 // 6. Set storage path to /tmp/storage
 $app->useStoragePath($tmpStorage);
 
-// 7. Register booting callback to safely override config repository right after LoadConfiguration runs
+// 7. Fix LogManager driver() method to prevent ArgumentCountError when logging exceptions
+$app->singleton('log', function ($app) {
+    return new class($app) extends \Illuminate\Log\LogManager {
+        public function driver($driver = null)
+        {
+            return $this->channel($driver);
+        }
+    };
+});
+
+// 8. Register booting callback to set safe configs
 $app->booting(function () {
     config([
         'session.driver' => 'file',
@@ -82,8 +92,9 @@ $app->booting(function () {
     ]);
 });
 
-// 8. Handle Request
+// 9. Handle Request
 $app->handleRequest(Request::capture());
+
 
 
 
