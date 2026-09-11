@@ -39,13 +39,13 @@ $appKey = getenv('APP_KEY') ?: ($_ENV['APP_KEY'] ?? 'base64:6VJ95kM7svpGcVNDiV/y
 $defaults = [
     'APP_KEY' => $appKey,
     'APP_ENV' => 'production',
-    'APP_DEBUG' => 'true',
+    'APP_DEBUG' => 'false',
     'VIEW_COMPILED_PATH' => $tmpStorage . '/framework/views',
     'APP_SERVICES_CACHE' => '/tmp/bootstrap/cache/services.php',
     'APP_PACKAGES_CACHE' => '/tmp/bootstrap/cache/packages.php',
     'APP_CONFIG_CACHE' => '/tmp/bootstrap/cache/config.php',
     'APP_ROUTES_CACHE' => '/tmp/bootstrap/cache/routes.php',
-    'SESSION_DRIVER' => 'array',
+    'SESSION_DRIVER' => 'file',
     'CACHE_STORE' => 'array',
     'QUEUE_CONNECTION' => 'sync',
     'DB_CONNECTION' => 'sqlite',
@@ -69,31 +69,21 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 // 6. Set storage path to /tmp/storage
 $app->useStoragePath($tmpStorage);
 
-// 7. Fix LogManager driver() method to prevent ArgumentCountError when logging exceptions
-$app->singleton('log', function ($app) {
-    return new class($app) extends \Illuminate\Log\LogManager {
-        public function driver($driver = null)
-        {
-            return $this->channel($driver);
-        }
-    };
-});
-
-// 8. Register booting callback to set safe configs
+// 7. Register booting callback to override config repository
 $app->booting(function () {
     config([
         'session.driver' => 'file',
         'cache.default' => 'array',
-        'logging.default' => 'single',
+        'logging.default' => 'stderr',
         'queue.default' => 'sync',
         'database.default' => 'sqlite',
         'mail.default' => 'log',
-        'app.debug' => true,
     ]);
 });
 
-// 9. Handle Request
+// 8. Handle Request
 $app->handleRequest(Request::capture());
+
 
 
 
