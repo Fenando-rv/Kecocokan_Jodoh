@@ -1,24 +1,14 @@
 <?php
 
-/**
- * Vercel Serverless Function Entrypoint for Laravel 12
- */
+// Arahkan storage Laravel ke folder /tmp karena filesystem Vercel bersifat read-only
+$storagePath = '/tmp/storage';
 
-use Illuminate\Foundation\Application;
-use Illuminate\Http\Request;
-
-define('LARAVEL_START', microtime(true));
-
-// 1. Setup writable directories in /tmp
-$tmpStorage = '/tmp/storage';
 $directories = [
-    $tmpStorage . '/framework/views',
-    $tmpStorage . '/framework/sessions',
-    $tmpStorage . '/framework/cache/data',
-    $tmpStorage . '/framework/testing',
-    $tmpStorage . '/app/public',
-    $tmpStorage . '/logs',
-    '/tmp/bootstrap/cache',
+    $storagePath . '/app/public',
+    $storagePath . '/framework/cache/data',
+    $storagePath . '/framework/sessions',
+    $storagePath . '/framework/views',
+    $storagePath . '/logs',
 ];
 
 foreach ($directories as $dir) {
@@ -27,60 +17,10 @@ foreach ($directories as $dir) {
     }
 }
 
-// 2. Ensure SQLite database file exists in /tmp
-$sqlitePath = '/tmp/database.sqlite';
-if (!file_exists($sqlitePath)) {
-    @touch($sqlitePath);
-}
+// Set environment variable path storage
+putenv("LARAVEL_STORAGE_PATH={$storagePath}");
+$_ENV['LARAVEL_STORAGE_PATH'] = $storagePath;
+$_SERVER['LARAVEL_STORAGE_PATH'] = $storagePath;
 
-// 3. Fix Vercel Serverless Proxy variables so Laravel routes match properly
-if (isset($_SERVER['HTTP_X_FORWARDED_URI'])) {
-    $_SERVER['REQUEST_URI'] = $_SERVER['HTTP_X_FORWARDED_URI'];
-}
-$_SERVER['SCRIPT_NAME'] = '/index.php';
-$_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/../public/index.php';
-
-// 4. Define serverless environment defaults
-$appKey = getenv('APP_KEY') ?: ($_ENV['APP_KEY'] ?? 'base64:6VJ95kM7svpGcVNDiV/yRKosu+dumLT9ZZId+zVO/Kw=');
-
-$defaults = [
-    'APP_KEY' => $appKey,
-    'APP_ENV' => 'production',
-    'APP_DEBUG' => 'false',
-    'VIEW_COMPILED_PATH' => $tmpStorage . '/framework/views',
-    'APP_SERVICES_CACHE' => '/tmp/bootstrap/cache/services.php',
-    'APP_PACKAGES_CACHE' => '/tmp/bootstrap/cache/packages.php',
-    'APP_CONFIG_CACHE' => '/tmp/bootstrap/cache/config.php',
-    'APP_ROUTES_CACHE' => '/tmp/bootstrap/cache/routes.php',
-    'SESSION_DRIVER' => 'file',
-    'CACHE_STORE' => 'array',
-    'QUEUE_CONNECTION' => 'sync',
-    'DB_CONNECTION' => 'sqlite',
-    'DB_DATABASE' => $sqlitePath,
-    'LOG_CHANNEL' => 'stderr',
-];
-
-foreach ($defaults as $key => $value) {
-    putenv("{$key}={$value}");
-    $_ENV[$key] = $value;
-    $_SERVER[$key] = $value;
-}
-
-// 5. Load Composer Autoloader
-require __DIR__ . '/../vendor/autoload.php';
-
-// 6. Bootstrap Application
-/** @var Application $app */
-$app = require_once __DIR__ . '/../bootstrap/app.php';
-
-// 7. Set storage path to /tmp/storage
-$app->useStoragePath($tmpStorage);
-
-// 8. Handle Request
-$app->handleRequest(Request::capture());
-
-
-
-
-
-
+// Jalankan entry point publik Laravel
+require __DIR__ . '/../public/index.php';
